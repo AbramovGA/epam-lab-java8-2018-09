@@ -1,5 +1,6 @@
 package lambda.part1.exercise;
 
+import com.google.common.collect.FluentIterable;
 import lambda.data.Person;
 import org.junit.jupiter.api.Test;
 
@@ -7,8 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.is;
 
 @SuppressWarnings({"ConstantConditions", "unused"})
 class Exercise3 {
@@ -17,8 +18,7 @@ class Exercise3 {
     void sortPersonsByAgeUsingArraysSortExpressionLambda() {
         Person[] persons = getPersons();
 
-        // TODO use Arrays.sort + expression-lambda
-
+        Arrays.sort(persons, (pers1, pers2) -> Integer.compare(pers1.getAge(), pers2.getAge()));
         assertThat(persons, is(arrayContaining(
                 new Person("Иван", "Мельников", 20),
                 new Person("Николай", "Зимов", 30),
@@ -31,7 +31,12 @@ class Exercise3 {
     void sortPersonsByLastNameThenFirstNameUsingArraysSortExpressionLambda() {
         Person[] persons = getPersons();
 
-        // TODO use Arrays.sort + statement-lambda
+        Arrays.sort(persons, (pers1, pers2) -> {
+            int res = pers1.getLastName().compareTo(pers2.getLastName());
+            if (res == 0)
+                return pers1.getFirstName().compareTo(pers2.getFirstName());
+            return res;
+        });
 
         assertThat(persons, is(arrayContaining(
                 new Person("Алексей", "Доренко", 40),
@@ -45,8 +50,7 @@ class Exercise3 {
     void findFirstWithAge30UsingGuavaPredicateLambda() {
         List<Person> persons = Arrays.asList(getPersons());
 
-        // TODO use FluentIterable
-        Person person = null;
+        Person person = FluentIterable.from(persons).firstMatch((pers) -> pers.getAge() == 30).get();
 
         assertThat(person, is(new Person("Николай", "Зимов", 30)));
     }
