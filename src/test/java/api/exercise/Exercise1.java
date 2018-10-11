@@ -6,12 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 
+import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings({"ConstantConditions", "unused", "MismatchedQueryAndUpdateOfCollection"})
 class Exercise1 {
@@ -34,7 +33,9 @@ class Exercise1 {
         candidates.put(ivan, Status.PENDING);
         candidates.put(helen, Status.PENDING);
 
-        // TODO implementation
+        BiFunction<Person, Status, Status> age21Filter = (person, status) -> person.getAge() > 21 ? Status.ACCEPTED : Status.DECLINED;
+
+        candidates.replaceAll(age21Filter);
 
         assertThat(candidates, Matchers.hasEntry(ivan, Status.ACCEPTED));
         assertThat(candidates, Matchers.hasEntry(helen, Status.ACCEPTED));
@@ -55,7 +56,18 @@ class Exercise1 {
         candidates.put(new Person("b", "c", 16), Status.PENDING);
         candidates.put(new Person("b", "c", 5), Status.PENDING);
 
-        // TODO implementation
+        BiFunction<Person, Status, Status> age21Filter = (person, status) -> person.getAge() > 21 ? Status.ACCEPTED : null;
+
+        candidates = candidates.entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getAge() > 21)
+                .map(entry -> {
+                    entry.setValue(Status.ACCEPTED);
+                    return entry;
+                })
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue));
 
         assertThat(candidates, Matchers.hasEntry(ivan, Status.ACCEPTED));
         assertThat(candidates, Matchers.hasEntry(helen, Status.ACCEPTED));
@@ -71,11 +83,9 @@ class Exercise1 {
         candidates.put(alex, Status.PENDING);
         candidates.put(ivan, Status.PENDING);
 
-        // TODO implementation
-
-        Status alexStatus = null;
-        Status ivanStatus = null;
-        Status helenStatus = null;
+        Status alexStatus = candidates.getOrDefault(alex, Status.UNKNOWN);
+        Status ivanStatus = candidates.getOrDefault(ivan, Status.UNKNOWN);
+        Status helenStatus = candidates.getOrDefault(helen, Status.UNKNOWN);
 
         assertThat(alexStatus, is(Status.PENDING));
         assertThat(ivanStatus, is(Status.PENDING));
@@ -97,7 +107,7 @@ class Exercise1 {
         newValues.put(alex, Status.DECLINED);
         newValues.put(helen, Status.PENDING);
 
-        // TODO implementation
+        oldValues.forEach(newValues::putIfAbsent);
 
         assertThat(newValues, hasEntry(alex, Status.DECLINED));
         assertThat(newValues, hasEntry(ivan, Status.ACCEPTED));
