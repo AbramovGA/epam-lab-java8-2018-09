@@ -5,17 +5,12 @@ import lambda.data.JobHistoryEntry;
 import lambda.data.Person;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings({"ConstantConditions", "unused"})
 class Exercise1 {
@@ -24,18 +19,30 @@ class Exercise1 {
     void calcTotalYearsSpentInEpam() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        Long hours = null;
+        Long hours = employees.stream()
+                .map(Employee::getJobHistory)
+                .flatMap(Collection::stream)
+                .filter(job -> "EPAM".equalsIgnoreCase(job.getEmployer()))
+                .map(JobHistoryEntry::getDuration)
+                .mapToLong(Long::new)
+                .sum();
 
-        assertThat(hours, is(19));
+        assertThat(hours, is(19L));
     }
 
     @Test
     void findPersonsWithQaExperience() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        Set<Person> workedAsQa = null;
+        Predicate<JobHistoryEntry> isQa = (JobHistoryEntry entry) -> "qa".equalsIgnoreCase(entry.getPosition());
+
+        Predicate<Employee> hasQaExperience = (Employee employee) -> employee.getJobHistory().stream()
+                .anyMatch(isQa);
+
+        Set<Person> workedAsQa = employees.stream()
+                .filter(hasQaExperience)
+                .map(Employee::getPerson)
+                .collect(Collectors.toSet());
 
         assertThat(workedAsQa, containsInAnyOrder(
                 employees.get(2).getPerson(),
@@ -48,8 +55,10 @@ class Exercise1 {
     void composeFullNamesOfEmployeesUsingLineSeparatorAsDelimiter() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        String result = null;
+        String result = employees.stream()
+                .map(Employee::getPerson)
+                .map(Person::getFullName)
+                .collect(Collectors.joining("\n"));
 
         assertThat(result, is(
                 "Иван Мельников\n"
@@ -65,8 +74,8 @@ class Exercise1 {
     void groupPersonsByFirstPositionUsingToMap() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        Map<String, Set<Person>> result = null;
+        Map<String, Set<Person>> result = employees.stream()
+                .collect();
 
         assertThat(result, hasEntry(is("dev"), contains(employees.get(0).getPerson())));
         assertThat(result, hasEntry(is("QA"), containsInAnyOrder(employees.get(2).getPerson(), employees.get(5).getPerson())));
