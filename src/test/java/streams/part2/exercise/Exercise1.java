@@ -6,14 +6,24 @@ import lambda.data.Person;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.function.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings({"ConstantConditions", "unused"})
 class Exercise1 {
+
+    private static final BinaryOperator<Set<Person>> mergeSets = (set1, set2) -> {
+        Set<Person> result = new HashSet<>();
+        result.addAll(set1);
+        result.addAll(set2);
+        return result;
+    };
 
     @Test
     void calcTotalYearsSpentInEpam() {
@@ -74,12 +84,46 @@ class Exercise1 {
     void groupPersonsByFirstPositionUsingToMap() {
         List<Employee> employees = getEmployees();
 
+        Function<Employee, String> getFirstPosition = (employee) -> employee.getJobHistory().get(0).getPosition();
+        Function<Employee, Set<Person>> employeeToSetPerson = (Employee e) -> {
+            Set<Person> set = new HashSet<Person>();
+            set.add(e.getPerson());
+            return set;
+        };
+
         Map<String, Set<Person>> result = employees.stream()
-                .collect();
+                .collect(toMap(getFirstPosition, employeeToSetPerson, mergeSets));
 
         assertThat(result, hasEntry(is("dev"), contains(employees.get(0).getPerson())));
         assertThat(result, hasEntry(is("QA"), containsInAnyOrder(employees.get(2).getPerson(), employees.get(5).getPerson())));
         assertThat(result, hasEntry(is("tester"), containsInAnyOrder(employees.get(1).getPerson(), employees.get(3).getPerson(), employees.get(4).getPerson())));
+    }
+
+    private static class EmployeeToPersonCollector implements Collector<Employee, Set<Person>, Set<Person>> {
+        @Override
+        public Supplier<Set<Person>> supplier() {
+            return HashSet::new;
+        }
+
+        @Override
+        public BiConsumer<Set<Person>, Employee> accumulator() {
+            return (accumulator, value) -> accumulator.add(value.getPerson());
+        }
+
+        @Override
+        public BinaryOperator<Set<Person>> combiner() {
+            return mergeSets;
+        }
+
+        @Override
+        public Function<Set<Person>, Set<Person>> finisher() {
+            return Function.identity();
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
     }
 
     @Test
@@ -87,12 +131,26 @@ class Exercise1 {
     void groupPersonsByFirstPositionUsingGroupingByCollector() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        Map<String, Set<Person>> result = null;
+        Function<Employee, String> getFirstPosition = (employee) -> employee.getJobHistory().get(0).getPosition();
+        Function<Employee, Set<Person>> employeeToSetPerson = (Employee e) -> {
+            Set<Person> set = new HashSet<Person>();
+            set.add(e.getPerson());
+            return set;
+        };
+
+        BinaryOperator<Set<Person>> mergeSets = (set1, set2) -> {
+            Set<Person> result = new HashSet<>();
+            result.addAll(set1);
+            result.addAll(set2);
+            return result;
+        };
+
+        Map<String, Set<Person>> result = employees.stream()
+                .collect(groupingBy(getFirstPosition, new EmployeeToPersonCollector()));
 
         assertThat(result, hasEntry(is("dev"), contains(employees.get(0).getPerson())));
         assertThat(result, hasEntry(is("QA"), containsInAnyOrder(employees.get(2).getPerson(), employees.get(5).getPerson())));
-        assertThat(result, hasEntry(is("test"), containsInAnyOrder(employees.get(1).getPerson(), employees.get(3).getPerson(), employees.get(4).getPerson())));
+        assertThat(result, hasEntry(is("tester"), containsInAnyOrder(employees.get(1).getPerson(), employees.get(3).getPerson(), employees.get(4).getPerson())));
     }
 
     private static List<Employee> getEmployees() {
